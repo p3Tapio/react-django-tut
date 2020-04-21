@@ -1,5 +1,10 @@
-import React, { Component } from 'react'
-import { Link } from 'react-router-dom';
+import React, { Component } from 'react';
+import { Link, Redirect } from 'react-router-dom';
+import { connect } from 'react-redux';
+import PropTypes from "prop-types";
+import { register } from '../../actions/auth';
+import { createMessage } from '../../actions/messages'; 
+
 
 export class Register extends Component {
     state = {
@@ -8,12 +13,28 @@ export class Register extends Component {
         password: '',
         password2: ''
     }
+    static propTypes = {
+        register: PropTypes.func.isRequired,
+        isAuthenticated: PropTypes.bool
+    }
     onSubmit = ev => {
         ev.preventDefault();
-        console.log('submit');
+        if(this.state.password !== this.state.password2) {              // saman voi tehdä const {password, password2} = this.state --> nyt passwordissa/2:ssa on staten passwordien tiedot ja ne voisi verrata 
+            this.props.createMessage({passwordsNotMatch: 'Passwords do not match'})
+        } else {
+            const newUser = {
+                username: this.state.username,
+                password: this.state.password,
+                email: this.state.email
+            }
+            this.props.register(newUser); 
+        }
     }
     onChange = ev => this.setState({ [ev.target.name]: ev.target.value })
     render() {
+        if(this.props.isAuthenticated) {
+            return <Redirect to="/"/>;
+        }
         const { username, email, password, password2 } = this.state;
         return (
             <div className="col-md-6 m-auto">
@@ -48,4 +69,8 @@ export class Register extends Component {
         );
     }
 }
-export default Register
+const mapStateToProps = state => ({
+    isAuthenticated: state.auth.isAuthenticated
+})
+
+export default connect(mapStateToProps, { register, createMessage })(Register); 

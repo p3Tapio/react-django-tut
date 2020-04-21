@@ -1448,4 +1448,186 @@ https://www.youtube.com/watch?v=kfpY5BsIoFg&list=PLillGF-RfqbbRA-CIUxlxkUpbq0IFk
         // ekaan ifiin vikaks messiin: 
              if (error.msg.non_field_errors) alert.error(error.msg.non_field_errors.join())
 
-jatka hello viesti 23:00 
+
+    11. Header.js (näyttämään käyttäjän nimen):
+
+                    const authLinks = (
+                        <ul className="navbar-nav">
+                            <span className="navbar-text mr-3"><strong>{user ? `Welcome ${user.username}` : ""}</strong></span>
+                        . . . 
+
+    12. actions/auth.js: (pätkä loadUserista siirretty omaan funktioon):
+
+
+
+
+            // functio headerin configin asettamiseen, jossa auth/token: 
+            export const tokenConfig = getState => {
+                // get token from state
+                const token = getState().auth.token;
+                //headers:
+                const config = {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+                // jos token on, niin mukaan headeriin kuten postmanissa 
+                if (token) {
+                    config.headers['Authorization'] = `Token ${token}`
+                }
+                return config
+            }
+
+
+    // logoutista poistettu sama toiminto kuin yllä ja muuten muutettu tähän:
+    
+                axios.post('/api/auth/logout/', null, tokenConfig(getState))
+                    .then(res => {
+                        dispatch({
+                            type: LOGOUT_SUCCESS,
+                        });
+                    }).catch(err => {
+                        dispatch(returnErrors(err.response.data, err.response.status));
+                    })
+
+    // loadUserista poistettu ks pätkä ja axiosin alku vaihettu tähän: 
+
+                   axios.get('/api/auth/user', tokenConfig(getState))
+                    .then(res => {
+                        dispatch({ . . . 
+
+
+
+    13. Register toiminnot, 26:56 --- 
+
+            -- actions/types.js: 
+                        export const REGISTER_SUCCESS = "REGISTER_SUCCESS"; 
+                        export const REGISTER_FAIL = "REGISTER_FAIL"; 
+                        
+
+            -- actions/auth.js:
+
+                    import { USER_LOADED, USER_LOADING, AUTH_ERROR, LOGIN_SUCCESS, LOGIN_FAIL, LOGOUT_SUCCESS, REGISTER_FAIL, REGISTER_SUCCESS } from './types';
+
+                    // REG USER: 
+                    export const register = ({ username, email, password }) => dispatch => {
+                        //headers:
+                        const config = {
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        }
+                        // request body:
+                        const body = JSON.stringify({ username, email, password });
+
+                        axios.post('/api/auth/register', body, config)
+                            .then(res => {
+                                dispatch({
+                                    type: REGISTER_SUCCESS,
+                                    payload: res.data
+                                });
+                            }).catch(err => {
+                                dispatch(returnErrors(err.response.data, err.response.status));
+                                dispatch({
+                                    type: REGISTER_FAIL
+                                });
+                            })
+                    }
+
+            -- reducers/auth.js: 
+
+                    // samaan nippuun register kuin loginit (huom tsekkaa importit tuliko automaattisesti) .. 
+
+                                    case LOGIN_SUCCESS:
+                                    case REGISTER_SUCCESS:
+
+                                    . . . 
+
+                                    case AUTH_ERROR:
+                                    case LOGIN_FAIL:
+                                    case LOGOUT_SUCCESS: 
+                                    case REGISTER_FAIL:
+
+            -- components/accounts/Register.js:
+
+                        import { connect } from 'react-redux';
+                        import PropTypes from "prop-types";
+                        import { register } from '../../actions/auth';
+                        import { createMessage } from '../../actions/messages';  // .. = yksi kansio alas
+                        . . . // + Redirect react-router-domiin 
+
+                            static propTypes = {
+                                register: PropTypes.func.isRequired,
+                                isAuthenticated: PropTypes.bool
+                            }
+
+                        onSubmit = ev => {
+                            ev.preventDefault();
+                            if(this.state.password !== this.state.password2) {              // saman voi tehdä const {password, password2} = this.state --> nyt passwordissa/2:ssa on staten passwordien tiedot ja ne voisi verrata 
+                                this.props.createMessage({passwordsNotMatch: 'Passwords do not match'})
+                            } else {
+                                const newUser = {
+                                    username: this.state.username,
+                                    password: this.state.password,
+                                    email: this.state.email
+                                }
+                                this.props.register(newUser); 
+                            }
+                        }
+
+                        . . . 
+
+                            render() {
+                                if(this.props.isAuthenticated) {
+                                    return <Redirect to="/"/>;
+                                }
+                        . . .
+
+                        const mapStateToProps = state => ({
+                            isAuthenticated: state.auth.isAuthenticated
+                        })
+
+                        export default connect(mapStateToProps, { register, createMessage })(Register); 
+
+            -- alerts.js (yhet ifit loppuihin lisää):
+
+                                if (error !== prevProps.error) {
+                                . . . 
+                                    if(error.msg.username) alert.error(error.msg.username.join());
+                                . . . 
+                               if (message !== prevProps.message) {
+                                . . . 
+                                    if(message.passwordsNotMatch) alert.error(message.passwordsNotMatch); 
+                                } 
+
+
+41:55 ... LEEADS: 
+
+    14. actions/leads.js 
+
+                    import { tokenConfig } from './auth';
+                     . . . 
+                    
+                    // GET LEADS: 
+                    export const getLeads = () => (dispatch, getState) => {
+
+                        axios.get('/api/leads/', tokenConfig(getState))
+                            .then(res => {
+                                dispatch({
+                    . . . 
+
+                    // DELETE LEAD: 
+                    export const deleteLead = (id) => (dispatch, getState) => {
+
+                        axios.delete(`/api/leads/${id}`, tokenConfig(getState))
+                            .then(res => {
+                    . . . 
+
+                    // POST LEAD 
+                    export const postLead = lead => (dispatch, getState) => {
+
+                        axios.post('/api/leads/', lead, tokenConfig(getState))
+                            .then(res => {
+                    . . . 
+
+PROBLEEMI, REFRESH PUDOTTAA PIHALLE :((( 
