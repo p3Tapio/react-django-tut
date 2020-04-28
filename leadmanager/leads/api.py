@@ -2,7 +2,7 @@ from leads.models import Lead
 from rest_framework import viewsets, permissions
 from .serializers import LeadSerializer
 
-# Lead Viewset (täys crudi ilman metodien specifiointia ! :D )
+# Lead Viewset = koko CRUD
 
 class LeadViewSet(viewsets.ModelViewSet):
     permission_classes = [
